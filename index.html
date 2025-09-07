@@ -1,26 +1,101 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <title>ESP32 Controller</title>
-        <link rel="icon" href="logo.ico">
-        <meta charset="utf-8">
-        <meta http-equiv="X-UA-Compatible" content="IE=edge">
-        <meta name="description" content="">
-        <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link rel="stylesheet" href="style/style.css">
-     
-    </head>
-    <body>
-        <h1>Real Time (Almost) Controller ESP-32 with Websocket</h1>
-        <div id="control">
-            <button id="up">&lt;</button>
-            <button id="left">&lt;</button>
-            <button id="down">&gt;</button>
-            <button id="right">&gt;</button>
-        </div>
-    </body>
-    <footer>
-        <div>Wallnuts</b></div>
-    </footer>
+<head>
+    <title>ESP32-CAM Controller</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+        }
+        button {
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #4CAF50;
+            color: white;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #status {
+            margin: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            background: #ddd;
+        }
+        .connected { background: #d4edda; color: #155724; }
+        .disconnected { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>ESP32-CAM LED Controller</h1>
+    
+    <div id="status" class="disconnected">
+        Status: Connecting...
+    </div>
+    
+    <div>
+        <button id="on">LED ON</button>
+        <button id="off">LED OFF</button>
+    </div>
+
+    <script>
+        const buttons = document.querySelectorAll("button");
+        const status = document.getElementById("status");
+        let ws;
+
+        function init() {
+            if (ws) {
+                ws.onerror = ws.onopen = ws.onclose = null;
+                ws.close();
+            }
+            
+            let HOST = location.origin.replace(/^http/, 'ws');
+            ws = new WebSocket(HOST);
+            
+            ws.onopen = () => {
+                console.log('Connection Open');
+                status.textContent = 'Status: Connected';
+                status.className = 'connected';
+            };
+            
+            ws.onclose = () => {
+                console.log('Connection Closed');
+                status.textContent = 'Status: Disconnected';
+                status.className = 'disconnected';
+                ws = null;
+                setTimeout(init, 3000); // Reconnect after 3 seconds
+            };
+            
+            ws.onerror = () => {
+                status.textContent = 'Status: Error';
+                status.className = 'disconnected';
+            };
+        }
+
+        buttons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                if (!ws) {
+                    console.log("No WebSocket Connection");
+                    return;
+                }
+                const command = e.target.id;
+                ws.send(command);
+                console.log('Sent:', command);
+            });
+        });
+
+        init();
+    </script>
+</body>
 </html>
-<script async type="module" src="js/index.js"></script>
